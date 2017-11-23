@@ -12,16 +12,20 @@ public class GameObject {
 	protected String objectType;
 	protected float coordX;
 	protected float coordY;
+	protected float width;
+	protected float height;
 	
 	public GameObject(TextureRegion textureRegion) {
 		this.textureRegion = textureRegion;
 		this.coordX = 0.0f;
 		this.coordY = 0.0f;
+		this.width = textureRegion.getRegionWidth();
+		this.height = textureRegion.getRegionHeight();
 		this.objectType = "undefined";
 	}
 	
 	public void Draw(SpriteBatch batch) {
-		batch.draw(textureRegion, coordX, coordY);
+		batch.draw(textureRegion, coordX, coordY, width, height);
 	}
 	
 	public void Update(ArrayList<GameObject> gameObjects) {
@@ -36,6 +40,11 @@ public class GameObject {
 	public void MoveTo(float coordX, float coordY) {
 		this.coordX = coordX;
 		this.coordY = coordY;
+	}
+	
+	public void SetDimensions(float width, float height) {
+		this.width = width;
+		this.height = height;
 	}
 	
 	public boolean Overlaps(GameObject other) {
@@ -64,11 +73,11 @@ public class GameObject {
 		return coordY;
 	}
 	
-	public int GetWidth() {
-		return textureRegion.getRegionWidth();
+	public float GetWidth() {
+		return width;
 	}
 	
-	public int GetHeight() {
-		return textureRegion.getRegionHeight();
+	public float GetHeight() {
+		return height;
 	}
 }

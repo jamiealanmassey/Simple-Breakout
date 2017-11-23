@@ -26,13 +26,14 @@ public class Ball extends GameObject {
 		this.velocity.y = 1.0f;
 		this.velocity.z = 0.0f;
 		this.velocity.nor();
-		this.speed = 50.0f;
+		this.speed = 250.0f;
 		this.radius = (textureRegion.getRegionWidth() / 2.0f);
 	}
 	
 	@Override
 	public void Update(ArrayList<GameObject> gameObjects) {
 		Vector3 origin = new Vector3(coordX + radius, coordY + radius, 0);
+		Vector3 intersection = Vector3.Zero;
 		Ray raycast = new Ray(origin, velocity);
 		
 		Vector3 debugPoint = Vector3.Zero;
@@ -44,21 +45,19 @@ public class Ball extends GameObject {
 				continue;
 			
 			// Step 1: Calculate extended AABB, perform quick intersection to see if we are within the area
+			byte region = 0;
 			BoundingBox bounding = gameObject.GetAABB();
 			BoundingBox boundingE = new BoundingBox(bounding);
-			Vector3 intersection = Vector3.Zero;
 			Vector3 minimumE = new Vector3(boundingE.min.x - radius, boundingE.min.y - radius, 0);
 			Vector3 maximumE = new Vector3(boundingE.max.x + radius, boundingE.max.y + radius, 0);
 			boundingE.set(minimumE, maximumE);
 			
-			byte region = IntersectRayAABB(raycast, boundingE, intersection);
-			
-			if (region == 0)
+			if ((region = IntersectRayAABB(raycast, boundingE, intersection)) == 0)
 				continue;
 			
 			// Step 2: If point is inside face voronoi we are done, intersection happened, otherwise we have to check corners
 			if (region == (1 << 3)) {
-				if (intersection.y >= bounding.min.y -EPSILON_BIAS && intersection.y <= bounding.max.y +EPSILON_BIAS)
+				if (intersection.y >= bounding.min.y && intersection.y <= bounding.max.y)
 					HandleCollision(intersection, region);
 				else if(intersection.y < bounding.min.y) {
 					if (IntersectRayCircle(raycast, bounding.min, radius, intersection))
@@ -70,7 +69,7 @@ public class Ball extends GameObject {
 				}
 			}
 			else if(region == (1 << 1)) {
-				if (intersection.y >= bounding.min.y -EPSILON_BIAS && intersection.y <= bounding.max.y +EPSILON_BIAS)
+				if (intersection.y >= bounding.min.y && intersection.y <= bounding.max.y)
 					HandleCollision(intersection, region);
 				else if(intersection.y < bounding.min.y) {
 					if (IntersectRayCircle(raycast, new Vector3(bounding.max.x, bounding.min.y, 0), radius, intersection))
@@ -82,19 +81,7 @@ public class Ball extends GameObject {
 				}
 			}
 			else if(region == (1 << 2)) {
-				if (intersection.x >= bounding.min.x -EPSILON_BIAS && intersection.x <= bounding.max.x +EPSILON_BIAS)
-					HandleCollision(intersection, region);
-				else if(intersection.x < bounding.min.x) {
-					if (IntersectRayCircle(raycast, bounding.min, radius, intersection))
-						HandleCollision(intersection, region);
-				}
-				else {
-					if (IntersectRayCircle(raycast, new Vector3(bounding.max.x, bounding.min.y, 0), radius, intersection))
-						HandleCollision(intersection, region);
-				}		
-			}
-			else if(region == (1 << 0)) {
-				if (intersection.x >= bounding.min.x -EPSILON_BIAS && intersection.x <= bounding.max.x +EPSILON_BIAS)
+				if (intersection.x >= bounding.min.x && intersection.x <= bounding.max.x)
 					HandleCollision(intersection, region);
 				else if(intersection.x < bounding.min.x) {
 					if (IntersectRayCircle(raycast, new Vector3(bounding.min.x, bounding.max.y, 0), radius, intersection))
@@ -103,7 +90,19 @@ public class Ball extends GameObject {
 				else {
 					if (IntersectRayCircle(raycast, bounding.max, radius, intersection))
 						HandleCollision(intersection, region);
-				}	
+				}		
+			}
+			else if(region == (1 << 0)) {
+				if (intersection.x >= bounding.min.x && intersection.x <= bounding.max.x)
+					HandleCollision(intersection, region);
+				else if(intersection.x < bounding.min.x) {
+					if (IntersectRayCircle(raycast, bounding.min, radius, intersection))
+						HandleCollision(intersection, region);
+				}
+				else {
+					if (IntersectRayCircle(raycast, new Vector3(bounding.max.x, bounding.min.y, 0), radius, intersection))
+						HandleCollision(intersection, region);
+				}
 			}
 		}
 		
@@ -158,7 +157,7 @@ public class Ball extends GameObject {
 		}
 		
 		if ((originRegion & (1 << 2)) != 0) {
-			float t = (boundingBox.min.y - origin.y) / (raycast.direction.y);
+			float t = (boundingBox.max.y - origin.y) / (raycast.direction.y);
 			
 			if (t >= -EPSILON_BIAS && t <= delta +EPSILON_BIAS) {
 				float x = origin.x + (raycast.direction.x * t);
@@ -170,10 +169,10 @@ public class Ball extends GameObject {
 			}
 		}
 		else if ((originRegion & (1 << 0)) != 0) {
-			float t = (boundingBox.max.y - origin.y) / (raycast.direction.y);
+			float t = (boundingBox.min.y - origin.y) / (raycast.direction.y);
 			
 			if (t >= -EPSILON_BIAS && t <= delta +EPSILON_BIAS) {
-				float x = origin.x + (raycast.direction.x * t);
+				float x = origin.x + (raycast.direction.x * t); // TODO: FIX CORNERS
 				
 				if (x >= boundingBox.min.x && x <= boundingBox.max.x) {
 					intersection = new Vector3(x, boundingBox.max.y, 0);
@@ -187,7 +186,7 @@ public class Ball extends GameObject {
 	
 	private boolean IntersectRayCircle(Ray raycast, Vector3 centre, float radius, Vector3 intersection) {
 		Vector3 deltaCentre = new Vector3(raycast.origin);
-		Vector3 direction = new Vector3(raycast.direction).scl(speed);
+		Vector3 direction = new Vector3(raycast.direction);
 		deltaCentre.sub(centre);
 		
 		float dot1 = new Vector3(deltaCentre).dot(direction);
@@ -203,7 +202,7 @@ public class Ball extends GameObject {
 		if(t > Gdx.graphics.getDeltaTime() -EPSILON_BIAS)
 			return false;
 		
-		intersection = new Vector3(direction).scl(t).add(raycast.origin);
+		intersection = new Vector3(direction).scl(t * speed).add(raycast.origin);
 		return true;
 	}
 	
@@ -216,9 +215,9 @@ public class Ball extends GameObject {
 			region |= (1 << 1);
 		
 		if (point.y <= boundingBox.min.y)
-			region |= (1 << 2);
-		else if (point.y >= boundingBox.max.y)
 			region |= (1 << 0);
+		else if (point.y >= boundingBox.max.y)
+			region |= (1 << 2);
 		
 		return region;
 	}
