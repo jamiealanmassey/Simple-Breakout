@@ -41,15 +41,15 @@ public class SimpleBreakout extends ApplicationAdapter {
 		GameObject barrier3 = new GameObject(new TextureRegion(gameSprites, 93, 159, 4, 4));
 		GameObject barrier4 = new GameObject(new TextureRegion(gameSprites, 93, 159, 4, 4));
 		
-		barrier1.MoveTo(-2, 0);
+		barrier1.MoveTo(4, 0);
 		barrier2.MoveTo(0, 0);
-		barrier3.MoveTo(0, screenHeight - 4);
+		barrier3.MoveTo(4, screenHeight - 4);
 		barrier4.MoveTo(screenWidth - 4, 0);
 		
-		barrier1.SetDimensions(screenWidth + 4, 4);
-		barrier2.SetDimensions(4, screenHeight + 4);
-		barrier3.SetDimensions(screenWidth + 4, 4);
-		barrier4.SetDimensions(4, screenHeight + 4);
+		barrier1.SetDimensions(screenWidth - 8, 4);
+		barrier2.SetDimensions(4, screenHeight);
+		barrier3.SetDimensions(screenWidth - 8, 4);
+		barrier4.SetDimensions(4, screenHeight);
 		
 		gameObjects.add(barrier1);
 		gameObjects.add(barrier2);
@@ -60,7 +60,7 @@ public class SimpleBreakout extends ApplicationAdapter {
 			for (int x = 0; x < 5; x++) {
 				GameObject block = new GameObject(new TextureRegion(gameSprites, 48, 72, 64, 16));
 				block.coordX = (screenWidth / 2) - 32 - ((x - 2) * 100);
-				block.coordY = (screenHeight / 2) + (i * 60);
+				block.coordY = (screenHeight / 2) + (i * 50) - 20;
 				gameObjects.add(block);
 			}
 		}

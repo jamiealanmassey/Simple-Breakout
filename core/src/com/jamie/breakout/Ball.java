@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
@@ -15,6 +14,7 @@ public class Ball extends GameObject {
 	private float radius;
 	
 	private static final float EPSILON_BIAS = 0.0001f;
+	private static final float COLLIDE_BIAS = 1.0f;
 	
 	public Ball(TextureRegion textureRegion, int screenWidth, int screenHeight) {
 		super(textureRegion);
@@ -26,7 +26,7 @@ public class Ball extends GameObject {
 		this.velocity.y = 1.0f;
 		this.velocity.z = 0.0f;
 		this.velocity.nor();
-		this.speed = 250.0f;
+		this.speed = 350.0f;
 		this.radius = (textureRegion.getRegionWidth() / 2.0f);
 	}
 	
@@ -36,9 +36,9 @@ public class Ball extends GameObject {
 		Vector3 intersection = Vector3.Zero;
 		Ray raycast = new Ray(origin, velocity);
 		
-		Vector3 debugPoint = Vector3.Zero;
+		/*Vector3 debugPoint = Vector3.Zero;
 		raycast.getEndPoint(debugPoint, 500);
-		DebugHelper.DrawDebugLine(new Vector2(coordX + radius, coordY + radius), new Vector2(debugPoint.x, debugPoint.y), null);
+		DebugHelper.DrawDebugLine(new Vector2(coordX + radius, coordY + radius), new Vector2(debugPoint.x, debugPoint.y), null);*/
 		
 		for (GameObject gameObject : gameObjects) {
 			if (gameObject == this)
@@ -113,17 +113,34 @@ public class Ball extends GameObject {
 	private void HandleCollision(Vector3 intersection, byte region) {
 		this.MoveTo(intersection.x, intersection.y);
 		
-		if (region == (1 << 3) || region == (1 << 1))
+		if (region == (1 << 3)) {
+			velocity.x *= -1;
+			this.Move(-(radius + COLLIDE_BIAS), 0);
+		}
+		else if (region == (1 << 1)) {
+			this.Move(radius + COLLIDE_BIAS, 0);
+			velocity.x *= -1;
+		}
+		else if (region == (1 << 2)) {
+			this.Move(0, radius + COLLIDE_BIAS);
+			velocity.y *= -1;
+		}
+		else if (region == (1 << 0)) {
+			this.Move(0, -(radius + COLLIDE_BIAS));
+			velocity.y *= -1;
+		}
+		
+		/*if (region == (1 << 3) || region == (1 << 1))
 			velocity.x *= -1;
 		else if (region == (1 << 2) || region == (1 << 0))
-			velocity.y *= -1;
+			velocity.y *= -1;*/
 	}
 	
 	private byte IntersectRayAABB(Ray raycast, BoundingBox boundingBox, Vector3 intersection) {
 		float delta = speed * Gdx.graphics.getDeltaTime();
 		Vector3 endpoint = Vector3.Zero;
 		Vector3 origin = raycast.origin;
-		raycast.getEndPoint(endpoint, delta * 2.0f);
+		raycast.getEndPoint(endpoint, delta * 3.0f);
 		
 		byte originRegion = GetCohenSoutherland(origin, boundingBox);
 		byte endpointRegion = GetCohenSoutherland(endpoint, boundingBox);
