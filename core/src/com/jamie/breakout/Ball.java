@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
 
+// This is a comment
 public class Ball extends GameObject {
 	private Vector3 velocity;
 	private float speed;
